@@ -1,5 +1,4 @@
 # AInfoQuery: AI-Powered Multimodal Document Chatbot
-![conversation tab](./backened/assets/conversation.png)
 
 ## Table of Contents
 
@@ -17,7 +16,7 @@
 
 ## Project Overview
 
-**AInfoQuery** is an intelligent chatbot platform that combines multimodal capabilities to interact with documents, voice, and multilingual text inputs. Built with a robust Flask backend and an engaging React.js frontend, it enables users to ask questions about uploaded documents and receive accurate, context-aware responses. This project addresses the increasing reliance on diverse digital content like PDFs, PowerPoint presentations, and online videos by providing a single platform to query, analyze, and interact with such content efficiently.
+**AInfoQuery** is an intelligent chatbot platform that combines multimodal capabilities to interact with documents, voice, and multilingual text inputs. Built with a robust Flask backend and an engaging React.js frontend, it enables users to ask questions about uploaded documents and receive accurate, context-aware responses. This project addresses the increasing reliance on diverse digital content like PDFs, PowerPoint presentations, web content and online videos by providing a single platform to query, analyze, and interact with such content efficiently.
 
 ## Features
 
@@ -33,21 +32,30 @@
 
 Include visuals demonstrating:
 1. Document upload interface and the React.js frontend
-2. Voice interaction example
+![conversation tab](./assets/upload.png)
+
+2. Chat history
+![conversation tab](./assets/chat-history.png)
+
 3. Multilingual question and response in action
+![conversation tab](./assets/conversation.png)
 
 ## Built With
 
 - **Frontend**: React.js
 - **Backend**: Flask
 - **AI/ML**:
-  - OpenAI API: GPT models for language processing and embeddings
-  - Google Cloud Speech-to-Text: For voice recognition
+  - `gpt-3.5-turbo`: for text processing and translation
+  - `tts-1`: for generating and playing speech
+  - `OpenAI's moderations api`: for input and output moderation
+  - `Google Cloud Speech-to-Text`: For voice recognition
+  - `langdetect`: for recognizing text in different languages
 - **Document Processing**:
-  - LangChain: Text chunking and document handling
-  - PyPDF: Handling PDF content
-  - YouTube-dl: Extracting video transcriptions
-- **Database**: Chroma vector database for efficient document retrieval
+  - `LangChain`: Text chunking and document handling
+  - `PyPDF`: Handling PDF content
+  - `YouTube-dl`: Extracting video transcriptions
+- **Database**: 
+   - `Chroma`: vector database for efficient document retrieval
 
 ## Prerequisites
 
@@ -63,7 +71,7 @@ Before starting, ensure you have:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/ainfoquery.git
+   git clone https://github.com/juma-paul/ai-info-query.git
    cd backend
    ```
 
@@ -91,6 +99,7 @@ Before starting, ensure you have:
 1. Start the backend:
    ```bash
    cd app
+   export GOOGLE_APPLICATION_CREDENTIALS=path_to_google_credentials.json
    python3 main.py
    ```
 
@@ -111,11 +120,8 @@ Here's an example of interacting with the chatbot:
    - Choose a PDF file and upload it
    - Start querying the document using the chat interface
 
-![conversation tab](./backened/assets/upload.png)
-
 2. API Integration Example:
-
-![conversation tab](./backened/assets/chat-history.png)
+![conversation tab](./assets/api-integration.png)
 
 3. Voice Interaction:
    - Say "Assistant" to activate the wake word
