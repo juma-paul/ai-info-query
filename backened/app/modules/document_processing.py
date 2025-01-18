@@ -4,7 +4,7 @@ from config import OPENAI_API_KEY
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, UnstructuredPowerPointLoader
 
 
 document_bp = Blueprint('document', __name__)
@@ -68,5 +68,38 @@ def upload_pdf():
         return {'message': 'PDF processed and added successfully.'}, 200
     except Exception as e:
         return {'error': f'Error processing PDF: {str(e)}'}, 500
+    finally:
+        os.remove(temp_path)
+
+
+@document_bp.route('/upload-ppt', methods=['POST'])
+def upload_ppt():
+    if 'powerPoint' not in request.files:
+        return {'error': 'No PowerPoint file provided!'}, 400
+    
+    ppt_file = request.files['powerPoint']
+    if not ppt_file.filename.endswith(('.ppt', '.pptx')):
+        return {'error': 'Invalid file format. Please upload a PowerPoint file.'}, 400
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pptx') as temp_file:
+        temp_path = temp_file.name
+        ppt_file.save(temp_path)
+
+    try:
+        ppt_loader = UnstructuredPowerPointLoader(temp_path)
+        ppt_docs = ppt_loader.load()
+        chunks = text_splitter.split_documents(ppt_docs)
+
+        if not chunks:
+            return {'error': 'No content was extracted from the PowerPoint.'}, 400
+        
+        documents = [chunk.page_content for chunk in chunks]
+        metadata = [{'id': str(uuid.uuid4()), **chunk.metadata} for chunk in chunks]
+
+        vector_db.add_texts(documents, metadatas=metadata)
+        return {'message': 'PowerPoint processed and added successfully.'}, 200
+
+    except Exception as e:
+        return {'error': f'Error processing PowerPoint: {str(e)}'}, 500
     finally:
         os.remove(temp_path)
