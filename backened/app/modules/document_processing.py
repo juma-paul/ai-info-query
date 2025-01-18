@@ -2,9 +2,10 @@ import os, re, tempfile, uuid
 from flask import Blueprint, request
 from config import OPENAI_API_KEY
 from langchain_chroma import Chroma
+from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader, UnstructuredPowerPointLoader
+from langchain_community.document_loaders import PyPDFLoader, UnstructuredPowerPointLoader, WebBaseLoader
 
 
 document_bp = Blueprint('document', __name__)
@@ -103,3 +104,30 @@ def upload_ppt():
         return {'error': f'Error processing PowerPoint: {str(e)}'}, 500
     finally:
         os.remove(temp_path)
+
+
+@document_bp.route('/process-url', methods=['POST'])
+def process_url():
+    url = request.json.get('url')
+
+    if not url:
+        return {'error': 'No URL provided!'}, 400
+    
+    try:
+        web_loader = WebBaseLoader(url)
+        docs = web_loader.load()
+        cleaned_content = clean_text(docs[0].page_content)
+
+        doc_obj = Document(page_content=cleaned_content, metadata={'source': url})
+
+        chunks = text_splitter.split_documents([doc_obj])
+
+        documents = [chunk.page_content for chunk in chunks]
+        metadata = [{'id': str(uuid.uuid4()), **chunk.metadata} for chunk in chunks]
+        
+        vector_db.add_texts(documents, metadatas=metadata)
+
+        return {'message': 'URL processed successfully.'}, 200
+    
+    except Exception as e:
+        return {'error': f'Error processing URL: {str(e)}'}, 500
