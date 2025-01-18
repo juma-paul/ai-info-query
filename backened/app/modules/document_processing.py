@@ -1,10 +1,13 @@
 import os, re, tempfile, uuid
-from flask import Blueprint, request
 from config import OPENAI_API_KEY
 from langchain_chroma import Chroma
+from flask import Blueprint, request
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders.generic import GenericLoader
+from langchain_community.document_loaders.parsers.audio import OpenAIWhisperParser
+from langchain_community.document_loaders.blob_loaders.youtube_audio import YoutubeAudioLoader
 from langchain_community.document_loaders import PyPDFLoader, UnstructuredPowerPointLoader, WebBaseLoader
 
 
@@ -131,3 +134,23 @@ def process_url():
     
     except Exception as e:
         return {'error': f'Error processing URL: {str(e)}'}, 500
+    
+
+@document_bp.route('/process-video', methods=['POST'])
+def process_video():
+    video_url = request.json.get('video_url')
+
+    if not video_url:
+        return {'error': 'No YouTube URL provided!'}, 400
+    
+    try:
+
+        loader = GenericLoader(YoutubeAudioLoader([video_url], "docs/youtube/"), OpenAIWhisperParser())
+        youtube_docs = loader.load()
+
+        vector_db.add_documents(youtube_docs)
+        
+        return {'message': 'YouTube video processed successfully.'}, 200
+
+    except Exception as e:
+        return {'errror': f'Error processing YouTube video: {str(e)}'}, 500
