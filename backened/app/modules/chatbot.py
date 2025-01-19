@@ -18,6 +18,10 @@ if not OPENAI_API_KEY:
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+languages = {
+    "en": "English", "es": "Spanish", "fr": "French", "ru": "Russian", "zh": "Chinese", "ar": "Arabic", "sw": "Swahili"
+}
+
 # Initialize conversation memory
 try:
     conversation_memory = ConversationBufferWindowMemory(
@@ -132,3 +136,13 @@ def start_new_conversation():
         return jsonify({'message': 'New conversation started successfully'}), 200
     except Exception:
         return jsonify({'error': 'Failed to start new conversation'}), 500
+    
+
+@chatbot_bp.route('/available-languages', methods=['GET'])
+def get_available_languages():
+    """Retrieves the list of available languages for translation."""
+    try:
+        languages_list = [{"code": code, "name": name} for code, name in languages.items()]
+        return jsonify({"languages": languages_list}), 200
+    except Exception:
+        return jsonify({'error': 'Failed to retrieve available languages'}), 500  
