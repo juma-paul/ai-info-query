@@ -33,3 +33,43 @@ try:
     retriever = vector_db.as_retriever()
 except Exception as e:
     raise ValueError(f"Failed to initialize retriever: {str(e)}")
+
+
+# Utility Functions
+def moderate_content(content, content_type="input"):
+    try:
+        response = client.moderations.create(input=content, model="omni-moderation-2024-09-26")
+        if 'results' in response and len(response.results) > 0:
+            flagged = response.results[0].get('flagged', False)
+            categories = response.results[0].get('categories', {})
+            if flagged:
+                flagged_categories = ', '.join(category for category, flagged in categories.items() if flagged)
+                if content_type == "input":
+                    message = f"I cannot assist with that request as it violates ethical guidelines related to: {flagged_categories}. Please feel free to ask a constructive or appropriate question."
+                else:
+                    message = f"The response generated might not be appropriate to share as it violates guidelines related to: {flagged_categories}. If you have another question, feel free to ask."
+                return False, message
+    except Exception:
+        return False, "An error occurred while processing your request. Please try again later."
+    return True, None
+
+def detect_prompt_injection(content):
+    injection_keywords = [
+        "ignore all rules", "ignore previous instructions", "bypass", "pretend", "as if",
+        "you are now", "disregard", "change the system", "disregard all", "do not follow", "reset"
+    ]
+    for keyword in injection_keywords:
+        if keyword.lower() in content.lower():
+            return False, "Your request includes potentially harmful manipulations and cannot be processed."
+    return True, None
+
+
+# Input sanitization remains the same
+def sanitize_input(input_text):
+    # Sanitize template injections by replacing curly braces
+    input_text = input_text.replace('{', '{{').replace('}', '}}')
+    
+    # Sanitize SQL injection risks (very basic example)
+    input_text = re.sub(r"(?i)(DROP|SELECT|INSERT|UPDATE|DELETE|--|\bUNION\b|\bFROM\b)", "", input_text)
+    
+    return input_text
