@@ -28,6 +28,8 @@ try:
 except Exception as e:
     raise ValueError(f"Failed to initialize conversation memory: {str(e)}")
 
+chat_history_storage = []
+
 # Initialize the retriever
 try:
     retriever = vector_db.as_retriever()
@@ -104,3 +106,29 @@ def translate_text(text, target_lang='English'):
         except Exception:
             return "An error occurred while translating the text. Please try again later."
     return text
+
+
+@chatbot_bp.route('/get-history', methods=['GET'])
+def get_history():
+    try:
+        return jsonify({'history': chat_history_storage}), 200
+    except Exception:
+        return jsonify({'error': 'Failed to retrieve chat history'}), 500
+    
+
+@chatbot_bp.route('/clear-history', methods=['POST'])
+def clear_history():
+    try:
+        chat_history_storage.clear()
+        return jsonify({'message': 'Chat history cleared successfully'}), 200
+    except Exception:
+        return jsonify({'error': 'Failed to clear chat history'}), 500
+    
+
+@chatbot_bp.route('/start-new-conversation', methods=['POST'])
+def start_new_conversation():
+    try:
+        conversation_memory.clear()
+        return jsonify({'message': 'New conversation started successfully'}), 200
+    except Exception:
+        return jsonify({'error': 'Failed to start new conversation'}), 500
