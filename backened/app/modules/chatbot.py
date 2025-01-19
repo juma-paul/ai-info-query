@@ -73,3 +73,16 @@ def sanitize_input(input_text):
     input_text = re.sub(r"(?i)(DROP|SELECT|INSERT|UPDATE|DELETE|--|\bUNION\b|\bFROM\b)", "", input_text)
     
     return input_text
+
+
+def sanitize_and_moderate(content, content_type="input"):
+    # Step 0: Sanitize input
+    content = sanitize_input(content)
+
+    # Step 1: Check for prompt injection
+    is_valid, error_message = detect_prompt_injection(content)
+    if not is_valid:
+        return False, error_message
+
+    # Step 2: Perform content moderation
+    return moderate_content(content, content_type)
