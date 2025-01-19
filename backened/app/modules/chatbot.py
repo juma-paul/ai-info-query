@@ -27,3 +27,9 @@ try:
     )
 except Exception as e:
     raise ValueError(f"Failed to initialize conversation memory: {str(e)}")
+
+# Initialize the retriever
+try:
+    retriever = vector_db.as_retriever()
+except Exception as e:
+    raise ValueError(f"Failed to initialize retriever: {str(e)}")
