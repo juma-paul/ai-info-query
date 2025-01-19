@@ -86,3 +86,21 @@ def sanitize_and_moderate(content, content_type="input"):
 
     # Step 2: Perform content moderation
     return moderate_content(content, content_type)
+
+
+def translate_text(text, target_lang='English'):
+    """Translates text to the specified target language."""
+    if target_lang != 'English':
+        try:
+            translation = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": f"Translate the following text into {target_lang}."},
+                    {"role": "user", "content": text}
+                ],
+                max_tokens=1000
+            )
+            return translation.choices[0].message.content.strip()
+        except Exception:
+            return "An error occurred while translating the text. Please try again later."
+    return text
