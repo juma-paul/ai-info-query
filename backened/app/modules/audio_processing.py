@@ -6,6 +6,7 @@ from pydub import AudioSegment
 from dotenv import load_dotenv
 from google.cloud import speech
 from pydub.playback import play
+import speech_recognition as sr
 
 load_dotenv()
 
@@ -23,6 +24,10 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 TEMP_AUDIO_PATH = "temp_audio.wav"
 REPLY_AUDIO_PATH = "reply.mp3"
 speech_client = speech.SpeechClient()
+
+WAKE_WORD = "assistant"
+STOP_WORD = "stop"
+is_active = False
 
 def handle_audio_input(audio_data):
     try:
@@ -88,3 +93,15 @@ def generate_and_play_speech(text, verbose=True):
             os.remove(REPLY_AUDIO_PATH)
         print(f"Error in generate_and_play_speech: {e}")
         raise e
+    
+
+def listen_for_audio():
+    recognizer = sr.Recognizer()
+    recognizer.energy_threshold = 300
+    recognizer.pause_threshold = 0.8
+    recognizer.dynamic_energy_threshold = False
+
+    with sr.Microphone(sample_rate=16000) as source:
+        print("Listening for audio...")
+        audio = recognizer.listen(source)
+    return audio
