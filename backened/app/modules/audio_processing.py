@@ -1,7 +1,11 @@
 import os, io
+from pathlib import Path
+from openai import OpenAI
+from datetime import datetime
+from pydub import AudioSegment
 from dotenv import load_dotenv
 from google.cloud import speech
-from openai import OpenAI
+from pydub.playback import play
 
 load_dotenv()
 
@@ -17,6 +21,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_credentials_path
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 TEMP_AUDIO_PATH = "temp_audio.wav"
+REPLY_AUDIO_PATH = "reply.mp3"
 speech_client = speech.SpeechClient()
 
 def handle_audio_input(audio_data):
@@ -51,3 +56,35 @@ def handle_audio_input(audio_data):
             os.remove(TEMP_AUDIO_PATH)
         print(f"Error in handle_audio_input: {e}")
         return None
+
+
+def generate_and_play_speech(text, verbose=True):
+    try:
+        print(f"Generating speech for text: {text}")
+        speech_file_path = Path(REPLY_AUDIO_PATH)
+
+        tts_response = client.audio.speech.create(
+            model="tts-1",
+            voice="shimmer",
+            input=text
+        )
+        tts_response.stream_to_file(speech_file_path)
+        audio_url = f"/static/{speech_file_path.name}"
+
+        reply_audio = AudioSegment.from_file(speech_file_path)
+        play(reply_audio)
+
+        if verbose:
+            print(f"[{datetime.now()}] Playback completed.")
+
+        if os.path.exists(speech_file_path):
+            os.remove(speech_file_path)
+            if verbose:
+                print(f"[{datetime.now()}] Temporary audio file '{REPLY_AUDIO_PATH}' removed.")
+
+        return audio_url
+    except Exception as e:
+        if os.path.exists(REPLY_AUDIO_PATH):
+            os.remove(REPLY_AUDIO_PATH)
+        print(f"Error in generate_and_play_speech: {e}")
+        raise e
