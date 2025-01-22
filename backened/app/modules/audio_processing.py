@@ -8,10 +8,13 @@ from google.cloud import speech
 from pydub.playback import play
 import speech_recognition as sr
 from langdetect import detect
+from flask import Blueprint, request, jsonify
 from modules.chatbot import (
     sanitize_and_moderate, translate_text, retrieval_chain, 
     conversation_memory, chat_history_storage
 )
+
+audio_bp = Blueprint('speech', __name__)
 
 load_dotenv()
 
@@ -143,3 +146,55 @@ def process_query(query, input_lang='auto-detect', output_lang='English'):
         return {"status": "success", "userMessage": query, "assistantResponse": answer}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+
+@audio_bp.route('/speech_chat', methods=['POST'])
+def speech_chat():
+    global is_active
+    try:
+        input_lang = request.json.get('inputLanguage', 'auto-detect')
+        output_lang = request.json.get('outputLanguage', 'English')
+
+        while True:
+            # Waiting Mode: Listen for wake word
+            while not is_active:
+                audio = listen_for_audio()
+                transcription = handle_audio_input(audio.get_wav_data())
+                if transcription and WAKE_WORD in transcription.lower():
+                    is_active = True
+                    generate_and_play_speech("Hello! How can I help you today?")
+                    break
+
+            # Conversation Mode
+            while is_active:
+                audio = listen_for_audio()
+                transcription = handle_audio_input(audio.get_wav_data())
+
+                if not transcription:
+                    generate_and_play_speech("I didn't catch that. Could you please repeat?")
+                    continue
+
+                if STOP_WORD in transcription.lower():
+                    is_active = False
+                    generate_and_play_speech("Goodbye! I'll be here if you need me.")
+                    break
+
+                # Process query
+                response = process_query(transcription, input_lang, output_lang)
+
+                if response["status"] == "error":
+                    error_message = response.get("message", "An error occurred")
+                    generate_and_play_speech(f"I'm sorry, but {error_message} Let's try again.")
+                    continue
+
+                audio_url = generate_and_play_speech(response["assistantResponse"])
+
+                return jsonify({
+                    "status": "success",
+                    "userMessage": response["userMessage"],
+                    "assistantResponse": response["assistantResponse"],
+                    "audioUrl": audio_url
+                })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
