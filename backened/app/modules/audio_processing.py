@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 from google.cloud import speech
 from pydub.playback import play
 import speech_recognition as sr
+from langdetect import detect
+from modules.chatbot import (
+    sanitize_and_moderate, translate_text, retrieval_chain, 
+    conversation_memory, chat_history_storage
+)
 
 load_dotenv()
 
@@ -105,3 +110,36 @@ def listen_for_audio():
         print("Listening for audio...")
         audio = recognizer.listen(source)
     return audio
+
+
+def process_query(query, input_lang='auto-detect', output_lang='English'):
+    try:
+        detected_lang = detect(query) if input_lang == "auto-detect" else input_lang
+
+        is_valid, error_message = sanitize_and_moderate(query, "input")
+        if not is_valid:
+            return {"status": "error", "message": error_message}
+
+        if detected_lang != "English":
+            query = translate_text(query, target_lang="English")
+
+        response = retrieval_chain.invoke({
+            "input": query,
+            "chat_history": conversation_memory.load_memory_variables({}).get("chat_history", [])
+        })
+        answer = response["answer"]
+
+        is_valid, error_message = sanitize_and_moderate(answer, "output")
+        if not is_valid:
+            return {"status": "error", "message": "Response contains inappropriate content."}
+
+        if output_lang != "English":
+            answer = translate_text(answer, target_lang=output_lang)
+
+        chat_history_storage.append({"role": "user", "content": query})
+        chat_history_storage.append({"role": "assistant", "content": answer})
+        conversation_memory.save_context({"input": query}, {"output": answer})
+
+        return {"status": "success", "userMessage": query, "assistantResponse": answer}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
