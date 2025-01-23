@@ -1,0 +1,13 @@
+# virtual environment
+multi-modal-env/
+
+# environment variables
+.env
+
+# Executables & dirs
+__pycache__
+docs/
+vector_db_directory
+
+# Google credentials
+speech-to-text.json
