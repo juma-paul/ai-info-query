@@ -1,6 +1,6 @@
 # AInfoQuery: AI-Powered Multimodal Chatbot for Document Interaction
 🔗 Live App: [Access Here](https://ai-info-frontend.vercel.app/)
-
+![conversation tab](./assets/main.png)
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
