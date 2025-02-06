@@ -1,4 +1,5 @@
-# AInfoQuery: AI-Powered Multimodal Document Chatbot
+# AInfoQuery: AI-Powered Multimodal Chatbot for Document Interaction
+🔗 Live App: [Access Here](https://ai-info-frontend.vercel.app/)
 
 ## Table of Contents
 
